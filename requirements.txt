@@ -1,6 +1,5 @@
 # Flask Backend Dependencies (Optimized for PythonAnywhere)
 # Install nodejs-bin FIRST for more reliable Prisma installation
-nodejs-bin>=18.0.0
 
 Flask>=3.0.0
 Flask-Cors>=4.0.0
