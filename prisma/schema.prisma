@@ -1,0 +1,28 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model diary_entries {
+  id         String   @id
+  user_id    String
+  title      String?
+  content    String
+  image_url  String?
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  @@index([user_id])
+}
+
+model users {
+  id            String   @id
+  email         String   @unique
+  password_hash String
+  displayName   String?
+  created_at    DateTime @default(now())
+}
