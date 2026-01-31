@@ -2,7 +2,6 @@ import "dotenv/config";
 import express from "express";
 import cors from "cors";
 import multer from "multer";
-import serverless from "serverless-http";
 
 import { registerUser } from "./modules/register.js";
 import { loginUser } from "./modules/login.js";
@@ -15,10 +14,10 @@ import { deleteEntry } from "./modules/deleteEntry.js";
 
 const app = express();
 const upload = multer({ storage: multer.memoryStorage() });
+const PORT = process.env.PORT || 8000;
 
 /* ======================================================
-   ✅ CORS (MUST COME FIRST)
-   Handles OPTIONS automatically (Node 24 safe)
+   ✅ CORS (Node 24 safe, handles OPTIONS automatically)
 ====================================================== */
 app.use(
   cors({
@@ -174,6 +173,8 @@ app.delete("/api/diary/entries/:id", async (req, res) => {
 });
 
 /* ======================================================
-   ❗ SERVERLESS EXPORT (NO app.listen)
+   🚀 START SERVER (NORMAL EXPRESS)
 ====================================================== */
-export default serverless(app);
+app.listen(PORT, "0.0.0.0", () => {
+  console.log(`🚀 Server running on http://localhost:${PORT}`);
+});
