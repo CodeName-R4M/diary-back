@@ -17,35 +17,22 @@ const app = express();
 const upload = multer({ storage: multer.memoryStorage() });
 
 /* ======================================================
-   ✅ CORS — MUST BE FIRST (VERCEL SAFE)
+   ✅ CORS (MUST COME FIRST)
+   Handles OPTIONS automatically (Node 24 safe)
 ====================================================== */
 app.use(
   cors({
-    origin: "https://diary-app-mu-azure.vercel.app",
+    origin: [
+      "https://diary-app-mu-azure.vercel.app",
+      "http://localhost:5173",
+    ],
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"],
   })
 );
 
-// Explicit OPTIONS handler (CRITICAL)
-app.options("*", (req, res) => {
-  res.setHeader(
-    "Access-Control-Allow-Origin",
-    "https://diary-app-mu-azure.vercel.app"
-  );
-  res.setHeader(
-    "Access-Control-Allow-Methods",
-    "GET,POST,PUT,DELETE,OPTIONS"
-  );
-  res.setHeader(
-    "Access-Control-Allow-Headers",
-    "Content-Type, Authorization"
-  );
-  return res.status(200).end();
-});
-
 /* ======================================================
-   ✅ BODY PARSERS
+   BODY PARSERS
 ====================================================== */
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
@@ -103,7 +90,7 @@ app.get("/api/auth/me", async (req, res) => {
     }
     const user = await myself({ token });
     res.json(user);
-  } catch (error) {
+  } catch {
     res.status(401).json({ detail: "Invalid authentication credentials" });
   }
 });
@@ -143,7 +130,7 @@ app.get("/api/diary/entries", async (req, res) => {
     }
     const entries = await getEntries({ token });
     res.json(entries);
-  } catch (error) {
+  } catch {
     res.status(401).json({ detail: "Invalid authentication credentials" });
   }
 });
@@ -187,6 +174,6 @@ app.delete("/api/diary/entries/:id", async (req, res) => {
 });
 
 /* ======================================================
-   ❗ VERCEL SERVERLESS EXPORT (NO app.listen EVER)
+   ❗ SERVERLESS EXPORT (NO app.listen)
 ====================================================== */
 export default serverless(app);
