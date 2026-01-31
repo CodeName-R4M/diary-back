@@ -2,6 +2,7 @@ import "dotenv/config";
 import express from "express";
 import cors from "cors";
 import multer from "multer";
+import serverless from "serverless-http";
 
 import { registerUser } from "./modules/register.js";
 import { loginUser } from "./modules/login.js";
@@ -14,41 +15,51 @@ import { deleteEntry } from "./modules/deleteEntry.js";
 
 const app = express();
 const upload = multer({ storage: multer.memoryStorage() });
-const port = process.env.PORT || 8000;
 
-/* =========================
-   ✅ CORS — MUST BE FIRST
-========================= */
+/* ======================================================
+   ✅ CORS — MUST BE FIRST (VERCEL SAFE)
+====================================================== */
 app.use(
   cors({
-    origin: [
-      "https://diary-app-mu-azure.vercel.app",
-      "http://localhost:5173",
-    ],
+    origin: "https://diary-app-mu-azure.vercel.app",
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"],
   })
 );
 
-// Explicit preflight handling
-app.options("*", cors());
+// Explicit OPTIONS handler (CRITICAL)
+app.options("*", (req, res) => {
+  res.setHeader(
+    "Access-Control-Allow-Origin",
+    "https://diary-app-mu-azure.vercel.app"
+  );
+  res.setHeader(
+    "Access-Control-Allow-Methods",
+    "GET,POST,PUT,DELETE,OPTIONS"
+  );
+  res.setHeader(
+    "Access-Control-Allow-Headers",
+    "Content-Type, Authorization"
+  );
+  return res.status(200).end();
+});
 
-/* =========================
+/* ======================================================
    ✅ BODY PARSERS
-========================= */
+====================================================== */
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-/* =========================
+/* ======================================================
    HEALTH CHECK
-========================= */
+====================================================== */
 app.get("/", (req, res) => {
   res.json({ message: "Personal Diary API", status: "running" });
 });
 
-/* =========================
+/* ======================================================
    AUTH ROUTES
-========================= */
+====================================================== */
 app.post("/api/auth/register", async (req, res) => {
   try {
     const result = await registerUser(req.body);
@@ -60,7 +71,8 @@ app.post("/api/auth/register", async (req, res) => {
     if (error.message === "EMAIL_EXISTS") {
       return res.status(400).json({ detail: "Email already registered" });
     }
-    res.status(500).json({ detail: error.message });
+    console.error("🔥 REGISTER ERROR:", error);
+    res.status(500).json({ detail: "Internal server error" });
   }
 });
 
@@ -96,9 +108,9 @@ app.get("/api/auth/me", async (req, res) => {
   }
 });
 
-/* =========================
+/* ======================================================
    DIARY ROUTES
-========================= */
+====================================================== */
 app.post("/api/diary/entries", upload.single("image"), async (req, res) => {
   try {
     const token = extractTokenFromHeader(req);
@@ -119,7 +131,7 @@ app.post("/api/diary/entries", upload.single("image"), async (req, res) => {
     res.status(201).json(entry);
   } catch (error) {
     console.error("🔥 CREATE ENTRY ERROR:", error);
-    res.status(500).json({ detail: error.message });
+    res.status(500).json({ detail: "Internal server error" });
   }
 });
 
@@ -170,17 +182,11 @@ app.delete("/api/diary/entries/:id", async (req, res) => {
     if (error.message === "ENTRY_NOT_FOUND") {
       return res.status(404).json({ detail: "Entry not found" });
     }
-    res.status(500).json({ detail: error.message });
+    res.status(500).json({ detail: "Internal server error" });
   }
 });
 
-/* =========================
-   ❗ VERCEL SAFE LISTEN
-========================= */
-if (process.env.NODE_ENV !== "production") {
-  app.listen(port, () => {
-    console.log(`Server running on http://localhost:${port}`);
-  });
-}
-
-export default app;
+/* ======================================================
+   ❗ VERCEL SERVERLESS EXPORT (NO app.listen EVER)
+====================================================== */
+export default serverless(app);
