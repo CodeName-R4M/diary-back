@@ -10,6 +10,7 @@ import { createEntry } from "./modules/createEntry.js";
 import { getEntries } from "./modules/getEntries.js";
 import { getEntry } from "./modules/getEntry.js";
 import { deleteEntry } from "./modules/deleteEntry.js";
+import cors from "cors";
 
 const upload = multer({ storage: multer.memoryStorage() });
 
@@ -19,6 +20,14 @@ const port = process.env.PORT || 8000;
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+app.use(
+  cors({
+    origin: [
+      "https://diary-app-mu-azure.vercel.app"
+    ],
+    credentials: true,
+  })
+);
 app.get("/", (req, res) => {
   res.json({ message: "Personal Diary API", status: "running" });
 });
