@@ -67,15 +67,41 @@ app.get('/api/auth/me', async (req, res) => {
 
 app.post('/api/diary/entries', upload.single('image'), async (req, res) => {
   try {
+    console.log('[server] Received diary entry request', {
+      hasToken: !!req.headers.authorization,
+      hasTitle: !!req.body.title,
+      hasContent: !!req.body.content,
+      hasImage: !!req.file,
+      imageDetails: req.file ? {
+        originalname: req.file.originalname,
+        mimetype: req.file.mimetype,
+        size: req.file.size,
+        hasBuffer: !!req.file.buffer,
+      } : null,
+    });
+
     const token = extractTokenFromHeader(req);
     if (!token) {
       return res.status(401).json({ detail: "No token provided" });
     }
     const { title, content } = req.body;
     const imageFile = req.file;
+    
+    console.log('[server] Calling createEntry with:', {
+      hasToken: !!token,
+      title: title || '(none)',
+      contentLength: content?.length || 0,
+      hasImageFile: !!imageFile,
+    });
+
     const entry = await createEntry({ token, title, content, imageFile });
     res.status(201).json(entry);
   } catch (error) {
+    console.error('[server] Error creating diary entry:', {
+      message: error.message,
+      stack: error.stack,
+      name: error.name,
+    });
     res.status(500).json({ detail: error.message });
   }
 });
