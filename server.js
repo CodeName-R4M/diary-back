@@ -1,6 +1,6 @@
 import 'dotenv/config';
 import express from 'express';
-import cors from 'cors';
+
 import multer from 'multer';
 import { registerUser } from "./modules/register.js";
 import { loginUser } from "./modules/login.js";
