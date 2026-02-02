@@ -11,19 +11,18 @@ import { createEntry } from "./modules/createEntry.js";
 import { getEntries } from "./modules/getEntries.js";
 import { getEntry } from "./modules/getEntry.js";
 import { deleteEntry } from "./modules/deleteEntry.js";
+import { updateEntry } from "./modules/updateEntry.js";
 
 const app = express();
 const upload = multer({ storage: multer.memoryStorage() });
 const PORT = process.env.PORT || 8000;
 
-/* ======================================================
-   ✅ CORS (Node 24 safe, handles OPTIONS automatically)
-====================================================== */
 app.use(
   cors({
     origin: [
       "https://diary-app-mu-azure.vercel.app",
       "http://localhost:5173",
+      "https://localhost:5173",
     ],
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"],
@@ -117,6 +116,35 @@ app.post("/api/diary/entries", upload.single("image"), async (req, res) => {
     res.status(201).json(entry);
   } catch (error) {
     console.error("🔥 CREATE ENTRY ERROR:", error);
+    res.status(500).json({ detail: "Internal server error" });
+  }
+});
+
+app.put("/api/diary/entries/:id", upload.single("image"), async (req, res) => {
+  try {
+    const token = extractTokenFromHeader(req);
+    if (!token) {
+      return res.status(401).json({ detail: "No token provided" });
+    }
+
+    const { title, content, deleteImage } = req.body;
+    const imageFile = req.file;
+
+    const entry = await updateEntry({
+      token,
+      entryId: req.params.id,
+      title,
+      content,
+      imageFile,
+      deleteImage,
+    });
+
+    res.json(entry);
+  } catch (error) {
+    if (error.message === "ENTRY_NOT_FOUND") {
+      return res.status(404).json({ detail: "Entry not found" });
+    }
+    console.error("🔥 UPDATE ENTRY ERROR:", error);
     res.status(500).json({ detail: "Internal server error" });
   }
 });
